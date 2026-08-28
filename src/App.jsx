@@ -1087,7 +1087,7 @@ function MoreScreen({ ctx }) {
               Data Platform — Malaysia Open Data<br />
               API — data.gov.my
             </div>
-            <div style={{ fontSize: 11, color: T.textFaint, marginTop: 12 }}>Designed &amp; engineered with care · v1.0.0</div>
+            <div style={{ fontSize: 11, color: T.textFaint, marginTop: 12 }}>Designed &amp; Developed by Suresh Kaleyannan · v1.0.0</div>
             <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 12, fontSize: 11, color: T.textFaint }}>
               <span>Terms</span><span>·</span><span>Privacy</span><span>·</span><span>Data source</span>
             </div>
