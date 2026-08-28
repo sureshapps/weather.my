@@ -712,6 +712,86 @@ function EmptyState({ T, icon, text }) {
   );
 }
 
+/* ---- MET warning body parser ----
+   MET Malaysia warning text arrives as one dense paragraph with real
+   structure baked into the punctuation: "SECTION A: <subtitle> 1) <TITLE
+   IN CAPS> <sentence-case description>. 2) <TITLE> <description>. SECTION
+   B: ...". We recover that structure so it can render as an actual list
+   instead of a wall of text, and fall back to the plain paragraph for any
+   text that doesn't match the pattern (e.g. earthquake felt-reports). */
+function splitItemTitleBody(str) {
+  // The all-caps item title ends where the first sentence-case word begins
+  // (an uppercase letter immediately followed by a lowercase letter).
+  const m = str.match(/^([\s\S]*?)\s+([A-Z][a-z][\s\S]*)$/);
+  if (m && m[1].trim()) return { title: m[1].trim(), body: m[2].trim() };
+  return { title: "", body: str.trim() };
+}
+function parseSectionBody(content) {
+  const numMatch = content.match(/\d+\)\s*/);
+  const subtitle = numMatch ? content.slice(0, numMatch.index).trim() : content.trim();
+  const itemsText = numMatch ? content.slice(numMatch.index) : "";
+  const rawParts = itemsText.split(/(\d+)\)\s*/).filter((p) => p !== "");
+  const items = [];
+  for (let i = 0; i < rawParts.length - 1; i += 2) {
+    const text = (rawParts[i + 1] || "").trim();
+    if (!text) continue;
+    items.push({ num: rawParts[i], ...splitItemTitleBody(text) });
+  }
+  return { subtitle, items };
+}
+function parseWarningText(text) {
+  if (!text) return null;
+  const sectionRe = /(?:SECTION|SEKSYEN)\s+([A-Z]):\s*/g;
+  const matches = [...text.matchAll(sectionRe)];
+  const chunks = matches.length
+    ? matches.map((m, i) => ({
+        letter: m[1],
+        content: text.slice(m.index + m[0].length, i + 1 < matches.length ? matches[i + 1].index : text.length).trim(),
+      }))
+    : [{ letter: null, content: text.trim() }];
+  const sections = chunks.map((c) => ({ letter: c.letter, ...parseSectionBody(c.content) }));
+  return sections.some((s) => s.items.length > 0) ? sections : null;
+}
+function WarningText({ T, text }) {
+  const sections = useMemo(() => parseWarningText(text), [text]);
+  if (!sections) return <div style={{ fontSize: 14, lineHeight: 1.7, color: T.text }}>{text}</div>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {sections.map((sec, si) => (
+        <div key={si}>
+          {sec.letter && (
+            <div className="mono" style={{ fontSize: 10.5, fontWeight: 700, color: T.accent2, letterSpacing: 1 }}>
+              SECTION {sec.letter}
+            </div>
+          )}
+          {sec.subtitle && (
+            <div style={{ fontSize: 12, fontWeight: 600, color: T.textDim, marginTop: sec.letter ? 3 : 0, marginBottom: 12 }}>
+              {sec.subtitle}
+            </div>
+          )}
+          {sec.items.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {sec.items.map((item, ii) => (
+                <div key={ii} style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
+                  <div className="mono" style={{ flexShrink: 0, width: 22, height: 22, marginTop: 1, borderRadius: "50%", background: `${T.accent2}1E`, border: `1px solid ${T.accent2}4D`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: T.accent2 }}>
+                    {item.num}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {item.title && (
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, letterSpacing: 0.2 }}>{item.title}</div>
+                    )}
+                    <div style={{ fontSize: 13.5, color: T.textDim, lineHeight: 1.65, marginTop: item.title ? 4 : 0 }}>{item.body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ---- Warning Detail (full screen) ---- */
 function WarningDetail({ ctx }) {
   const { T, selectedWarning: w, setSelectedWarning, language } = ctx;
@@ -741,8 +821,8 @@ function WarningDetail({ ctx }) {
           </div>
         </div>
 
-        <div style={{ marginTop: 20, padding: "16px 18px", borderRadius: 18, background: T.surface, border: `1px solid ${T.border}`, fontSize: 14, lineHeight: 1.7, color: T.text }}>
-          {en ? w.text_en : w.text_bm}
+        <div style={{ marginTop: 20, padding: "16px 18px", borderRadius: 18, background: T.surface, border: `1px solid ${T.border}` }}>
+          <WarningText T={T} text={en ? w.text_en : w.text_bm} />
         </div>
 
         <div style={{ marginTop: 16, padding: "14px 18px", borderRadius: 18, background: `${sev.color}18`, border: `1px solid ${sev.color}40`, display: "flex", alignItems: "center", gap: 10 }}>
