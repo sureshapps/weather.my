@@ -1073,6 +1073,9 @@ function MoreScreen({ ctx }) {
           <SettingsRow T={T} label="Last updated">
             <span style={{ fontSize: 12.5, color: T.textDim }}>{lastUpdated ? lastUpdated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
           </SettingsRow>
+                    <SettingsRow T={T} label="Developer">
+            <span style={{ fontSize: 12.5, color: T.textDim }}>Suresh Kaleyannan (MY)</span>
+          </SettingsRow>
           <SettingsRow T={T} label="Data source">
             <span style={{ fontSize: 12.5, color: T.textDim }}>api.data.gov.my</span>
           </SettingsRow>
@@ -1087,9 +1090,9 @@ function MoreScreen({ ctx }) {
               Data Platform — Malaysia Open Data<br />
               API — data.gov.my
             </div>
-            <div style={{ fontSize: 11, color: T.textFaint, marginTop: 12 }}>Designed &amp; Developed by Suresh Kaleyannan · v1.0.0</div>
+            <div style={{ fontSize: 11, color: T.textFaint, marginTop: 12 }}> · Designed &amp; Developed by Suresh Kaleyannan · </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 12, fontSize: 11, color: T.textFaint }}>
-              <span>www.suresh.app</span>
+              <span>v1.0.0</span>
             </div>
           </div>
         </SettingsGroup>
