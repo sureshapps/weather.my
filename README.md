@@ -29,9 +29,13 @@ malaysia-weather/
 │       ├── warning.js          → GET /api/weather/warning
 │       └── warning/
 │           └── earthquake.js   → GET /api/weather/warning/earthquake
+├── public/
+│   ├── manifest.webmanifest    → PWA manifest
+│   ├── sw.js                   → service worker (offline + caching)
+│   └── icons/                  → app icons (192/512/maskable/apple/favicon)
 ├── src/
 │   ├── App.jsx                 → the entire app
-│   └── main.jsx                → React entry point
+│   └── main.jsx                → React entry point, registers the service worker
 ├── index.html
 ├── vite.config.js
 ├── package.json
@@ -46,6 +50,10 @@ npm run dev
 ```
 
 Open the printed local URL (usually `http://localhost:5173`).
+
+Note: the service worker only registers in a production build
+(`import.meta.env.PROD`), so `npm run dev` behaves like a normal page — no
+stale caching to fight with while you're iterating.
 
 ## 2. Push to GitHub
 
@@ -91,6 +99,9 @@ vercel        # first deploy, follow the prompts (link/create project)
 vercel --prod # promote to production
 ```
 
+PWAs need HTTPS to install (except on `localhost`), so Vercel's free HTTPS
+domain is all you need — no extra setup.
+
 ## 4. Verify the API routes after deploy
 
 Once deployed, these should return live JSON directly (useful for debugging):
@@ -102,6 +113,35 @@ Once deployed, these should return live JSON directly (useful for debugging):
 If any of these return an error, it's an upstream MET Malaysia issue, not a
 CORS/deployment issue — the app's error states (retry buttons, "temporarily
 unavailable" messages) will handle it gracefully.
+
+## 5. Installing as an app (PWA)
+
+Once deployed to Vercel (or `npm run build && npm run preview`, which serves
+over `localhost`), the app is installable:
+
+- **Android / Chrome / Edge:** an "Install app" prompt appears in the address
+  bar / browser menu.
+- **iOS / iPadOS Safari:** Share → **Add to Home Screen**.
+- **macOS Chrome/Edge:** the install icon appears in the address bar.
+
+What's included:
+
+- `public/manifest.webmanifest` — name, theme colors, and icon set (regular
+  + maskable, so Android's adaptive-icon masks don't clip the logo).
+- `public/sw.js` — a service worker that:
+  - Caches the app shell so the app still opens with no connection.
+  - Always tries the network first for `/api/weather/*` calls (fresh
+    weather data), falling back to the last cached response offline.
+  - Cache-first for built JS/CSS/icons, so repeat visits load instantly.
+- `public/icons/` — generated from the app icon: `icon-192.png`,
+  `icon-512.png`, `icon-maskable-192.png`, `icon-maskable-512.png`,
+  `apple-touch-icon.png` (180×180), and 32/16px favicons.
+
+To ship a new icon later, replace the files in `public/icons/` (keep the
+same names/sizes) — no other code changes needed.
+
+To force-refresh what's cached after a deploy, bump `CACHE_VERSION` at the
+top of `public/sw.js`; the old cache is dropped automatically on next load.
 
 ## Notes
 
